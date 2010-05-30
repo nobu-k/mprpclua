@@ -1,7 +1,7 @@
 /*
  * MessagePack-RPC for Lua
  *
- * Copyright (C) 2010 Nobuyuki Kubota 
+ * Copyright (C) 2010 Nobuyuki Kubota
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ private:
   Client(const std::string& host, int port);
   Client(const Client&);
   Client& operator =(const Client&);
-  
+
 public:
   static const char* const MetatableName;
   static void registerUserdata(lua_State* L);
