@@ -18,6 +18,8 @@
 
 #include "client.hpp"
 
+#include "lua_objects.hpp"
+
 namespace msgpack {
 namespace rpc {
 namespace lua {
@@ -116,7 +118,11 @@ Client::~Client() {
 }
 
 int Client::call(lua_State* L, const std::string& name) {
-  return 0;
+  LuaObjects args(L, 2);
+
+  shared_zone slife;
+  future f = send_request(name, args, slife);
+  return 1;
 }
 
 } // namespace lua

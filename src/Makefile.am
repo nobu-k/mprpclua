@@ -4,6 +4,8 @@ pkglib_LTLIBRARIES = msgpackrpc.la
 
 msgpackrpc_la_SOURCES = \
   msgpackrpc.cpp \
+  lua_objects.hpp \
+  lua_objects.cpp \
   client.hpp \
   client.cpp
 msgpackrpc_la_CXXFLAGS = \
