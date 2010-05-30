@@ -2,6 +2,6 @@
 
 aclocal \
   && autoheader \
-  && glibtoolize --force --copy \
+  && libtoolize --force --copy \
   && automake --add-missing --foreign --copy \
   && autoconf
