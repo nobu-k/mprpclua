@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-#include <lua.h>
+#include <lua.hpp>
 
-namespace msgpackrpc {
+namespace msgpack {
+namespace rpc {
 namespace lua {
 
 /**
@@ -39,17 +40,18 @@ namespace {
 const char* const MpRpcLuaPkgName = "msgpackrpc";
 const struct luaL_Reg MpRpcLuaLib[] = {
   {"Client", &createClient},
-  {"Server", &createUnpacker},
+  {"Server", &createServer},
   {NULL, NULL}
 };
 } // namespace
 } // namespace lua
-} // namespace msgpackrpc
+} // namespace rpc
+} // namespace msgpack
 
 extern "C" {
   int luaopen_msgpackrpc(lua_State* L) {
-    luaL_register(L, msgpackrpc::lua::MpRpcLuaPkgName,
-                  msgpackrpc::lua::MpRpcLuaName);
+    luaL_register(L, msgpack::rpc::lua::MpRpcLuaPkgName,
+                  msgpack::rpc::lua::MpRpcLuaLib);
     return 1;
   }
 }
