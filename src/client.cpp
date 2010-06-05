@@ -122,7 +122,11 @@ int Client::call(lua_State* L, const std::string& name) {
 
   shared_zone slife;
   future f = send_request(name, args, slife);
-  return 1;
+
+  LuaObjects res(L);
+  f.join();
+  res.msgpack_unpack(f.result());
+  return res.unpackedResults();
 }
 
 } // namespace lua

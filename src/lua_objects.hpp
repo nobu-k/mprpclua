@@ -46,6 +46,10 @@ public:
   template<typename Packer>
   void msgpack_pack(Packer& pk) const {
     int n = lua_gettop(L);
+    if (arg_base > n) return;
+
+    // what should I do when there's no arguments
+    pk.pack_array(n - arg_base + 1);
     for (int i = arg_base; i <= n; i++) {
       int t = lua_type(L, i);
       switch (t) {
