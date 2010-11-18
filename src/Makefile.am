@@ -1,18 +1,13 @@
-pkglibdir = $(LUA_CMOD_DIR)
+lib_LTLIBRARIES = libmsgpack-rpc-lua.la
 
-pkglib_LTLIBRARIES = msgpackrpc.la
-
-msgpackrpc_la_SOURCES = \
+libmsgpack_rpc_lua_la_SOURCES = \
   msgpackrpc.cpp \
-  lua_objects.hpp \
-  lua_objects.cpp \
   client.hpp \
   client.cpp
-msgpackrpc_la_CXXFLAGS = \
+libmsgpack_rpc_lua_la_CXXFLAGS = \
   $(LUA_CFLAGS)
-msgpackrpc_la_LIBADD = \
-  $(LUA_LIBS) -lmsgpack -lmsgpack-rpc
+libmsgpack_rpc_lua_la_LIBADD = \
+  -L$(pkglibdir) $(LUA_LIBS) -lmsgpack -lmsgpack-rpc -lmsgpack-lua
 
-# Because mpluarpc.la does not start with "lib", module option is necessary.
-msgpackrpc_la_LDFLAGS = \
-  -module
+install-exec-hook:
+	ln -f -s $(libdir)/libmsgpack-rpc-lua.so $(LUA_CMOD_DIR)/msgpackrpc.so
