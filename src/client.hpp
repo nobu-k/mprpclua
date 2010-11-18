@@ -28,7 +28,7 @@ namespace lua {
 
 class Client : public ::msgpack::rpc::client {
 private:
-  Client(const std::string& host, int port);
+  Client(bool sync, const std::string& host, int port);
   Client(const Client&);
   Client& operator =(const Client&);
 
@@ -38,21 +38,63 @@ public:
 
   /**
    * @brief create a rpc client
+   */
+  static int create(lua_State* L);
+
+  /**
+   * @brief Create a sync or async rpc client
    *
    * This function actually creates a table which has no entry.
    * Instead, the table has Client* and custom __index in its metatable.
    * Each time users access to table, __index creates a new
    * closure which calls Client::call.
    */
-  static int create(lua_State* L);
+  static int create(lua_State* L, bool sync);
 
 private:
+  static int createUserdata(lua_State* L, bool sync);
   static int finalizer(lua_State* L);
 
 public:
   ~Client();
 
-  int call(lua_State* L, const std::string& name);
+  /**
+   * @brief call remote method
+   *
+   * @param L lua_State* of this context
+   * @param name name of the method to call
+   * @param arg_base the index in the stack which points to the first argument
+   *
+   * This function switches sync/async call according to the value of sync_.
+   */
+  int call(lua_State* L, const std::string& name, int arg_base);
+
+  /**
+   * @brief call remote method
+   *
+   * @param L lua_State* of this context
+   * @param sync sync/async switch
+   * @param name name of the method to call
+   * @param arg_base the index in the stack which points to the first argument
+   */
+  int call(lua_State* L, bool sync, const std::string& name, int arg_base);
+
+  /**
+   * @param L lua_State* of this context
+   * @param name name of the method to call
+   * @param arg_base the index in the stack which points to the first argument
+   */
+  int callSync(lua_State* L, const std::string& name, int arg_base);
+
+  /**
+   * @param L lua_State* of this context
+   * @param name name of the method to call
+   * @param arg_base the index in the stack which points to the first argument
+   */
+  int callAsync(lua_State* L, const std::string& name, int arg_base);
+
+private:
+  bool sync_;
 };
 
 } // namespace lua

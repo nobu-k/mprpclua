@@ -24,6 +24,17 @@ namespace msgpack {
 namespace rpc {
 namespace lua {
 namespace {
+// for Client userdata
+template<int (Client::*Memfun)(lua_State*, const std::string&, int)>
+int clientProxy(lua_State* L) {
+  Client* p =
+    *static_cast<Client**>(luaL_checkudata(L, 1, Client::MetatableName));
+  size_t name_len;
+  const char* name = luaL_checklstring(L, 2, &name_len);
+  return (p->*Memfun)(L, std::string(name, name_len), 3);
+}
+
+// for wrapper(SyncClient, AsyncClient)
 int callProxy(lua_State* L) {
   // get metatable of the table and get Client* from it
   luaL_checktype(L, 1, LUA_TTABLE);
@@ -38,7 +49,7 @@ int callProxy(lua_State* L) {
   // get name of the target function
   size_t name_len;
   const char* name = luaL_checklstring(L, lua_upvalueindex(1), &name_len);
-  return p->call(L, std::string(name, name_len));
+  return p->call(L, std::string(name, name_len), 2);
 }
 
 int createCallProxy(lua_State* L) {
@@ -63,21 +74,42 @@ const char* const Client::MetatableName = "msgpackrpc.Client";
 void Client::registerUserdata(lua_State* L) {
   luaL_newmetatable(L, Client::MetatableName);
 
+  // metatable.__index = metatable
+  lua_pushvalue(L, -1);
+  lua_setfield(L, -2, "__index");
+
   // set __gc
   lua_pushcfunction(L, &Client::finalizer);
   lua_setfield(L, -2, "__gc");
 
-  // no method
-  // TODO: provide "call(name, args)" functions as Client::rawCall
-
+  // register methods
+  const struct luaL_Reg Methods[] = {
+    {"call", &clientProxy<&Client::callSync>},
+    {"call_async", &clientProxy<&Client::callAsync>},
+    {NULL, NULL}
+  };
+  luaL_register(L, NULL, Methods);
   lua_pop(L, 1);
 }
 
-int Client::create(lua_State* L) {
+int Client::createUserdata(lua_State* L, bool sync) {
   size_t host_len;
   const char* host = luaL_checklstring(L, 1, &host_len);
   int port = luaL_checkint(L, 2);
 
+  // metatable["client"] = new Client
+  Client** p = static_cast<Client**>(lua_newuserdata(L, sizeof(Client*)));
+  luaL_getmetatable(L, Client::MetatableName);
+  lua_setmetatable(L, -2);
+  *p = new Client(sync, std::string(host, host_len), port);
+  return 1;
+}
+
+int Client::create(lua_State* L) {
+  return createUserdata(L, true); // sync call is default
+}
+
+int Client::create(lua_State* L, bool sync) {
   lua_newtable(L);
 
   // create metatable
@@ -86,10 +118,7 @@ int Client::create(lua_State* L) {
   lua_setfield(L, -2, "__index");
 
   // metatable["client"] = new Client
-  Client** p = static_cast<Client**>(lua_newuserdata(L, sizeof(Client*)));
-  luaL_getmetatable(L, Client::MetatableName);
-  lua_setmetatable(L, -2);
-  *p = new Client(std::string(host, host_len), port);
+  createUserdata(L, sync);
   lua_setfield(L, -2, "client");
 
   lua_setmetatable(L, -2);
@@ -97,28 +126,25 @@ int Client::create(lua_State* L) {
 }
 
 int Client::finalizer(lua_State* L) {
-  // get metatable of the table and get Client* from it
-  luaL_checktype(L, 1, LUA_TTABLE);
-  lua_getmetatable(L, 1);
-  lua_pushstring(L, "client");
-  lua_gettable(L, -2);
-
   Client* p =
     *static_cast<Client**>(luaL_checkudata(L, -1, Client::MetatableName));
   delete p;
-  lua_pop(L, 2); // pop metatable and Client*
   return 0;
 }
 
-Client::Client(const std::string& host, int port)
-  : client(host, port) {
+Client::Client(bool sync, const std::string& host, int port)
+  : client(host, port), sync_(sync) {
 }
 
 Client::~Client() {
 }
 
-int Client::call(lua_State* L, const std::string& name) {
-  msgpack::lua::LuaObjects args(L, 2, true);
+int Client::call(lua_State* L, const std::string& name, int arg_base) {
+  return call(L, sync_, name, arg_base);
+}
+
+int Client::call(lua_State* L, bool sync, const std::string& name, int arg_base) {
+  msgpack::lua::LuaObjects args(L, arg_base, true);
 
   shared_zone slife;
   future f = send_request(name, args, slife);
@@ -127,6 +153,14 @@ int Client::call(lua_State* L, const std::string& name) {
   msgpack::lua::LuaObjects res(L);
   res.msgpack_unpack(f.result());
   return 1;
+}
+
+int Client::callSync(lua_State* L, const std::string& name, int arg_base) {
+  return call(L, true, name, arg_base);
+}
+
+int Client::callAsync(lua_State* L, const std::string& name, int arg_base) {
+  return call(L, false, name, arg_base);
 }
 
 } // namespace lua

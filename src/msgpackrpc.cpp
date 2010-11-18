@@ -24,9 +24,42 @@ namespace rpc {
 namespace lua {
 
 /**
+ * @code
+ * class Client {
+ *   -- RPC interface
+ *   results call('name of method', arguments)
+ *   future call_async('name of method', arguments)
+ * }
+ * @endcode
  */
 int createClient(lua_State* L) {
   return Client::create(L);
+}
+
+/**
+ * @code
+ * class SyncClient {
+ *   -- RPC interface
+ *   results name_of_method(arguments...)
+ *   results operator('name of method', arguments...)
+ * }
+ * @endcode
+ */
+int createSyncClient(lua_State* L) {
+  return Client::create(L, true);
+}
+
+/**
+ * @code
+ * class AsyncClient {
+ *   -- RPC interface
+ *   future name_of_method(arguments...)
+ *   future operator('name of method', arguments...)
+ * }
+ * @endcode
+ */
+int createAsyncClient(lua_State* L) {
+  return Client::create(L, false);
 }
 
 /**
@@ -40,6 +73,8 @@ namespace {
 const char* const MpRpcLuaPkgName = "msgpackrpc";
 const struct luaL_Reg MpRpcLuaLib[] = {
   {"Client", &createClient},
+  {"SyncClient", &createSyncClient},
+  {"AsyncClient", &createAsyncClient},
   {"Server", &createServer},
   {NULL, NULL}
 };
