@@ -72,7 +72,10 @@ int createCallProxy(lua_State* L) {
 const char* const Client::MetatableName = "msgpackrpc.Client";
 
 void Client::registerUserdata(lua_State* L) {
-  luaL_newmetatable(L, Client::MetatableName);
+  if (luaL_newmetatable(L, Client::MetatableName) == 0) {
+    lua_pop(L, 1);
+    return; // already created
+  }
 
   // metatable.__index = metatable
   lua_pushvalue(L, -1);
