@@ -19,6 +19,7 @@
 #include "client.hpp"
 
 #include <msgpack/lua/lua_objects.hpp>
+#include "future.hpp"
 
 namespace msgpack {
 namespace rpc {
@@ -151,11 +152,13 @@ int Client::call(lua_State* L, bool sync, const std::string& name, int arg_base)
 
   shared_zone slife;
   future f = send_request(name, args, slife);
-  f.join();
 
-  msgpack::lua::LuaObjects res(L);
-  res.msgpack_unpack(f.result());
-  return 1;
+  if (sync) {
+    return LuaFuture(f).get(L);
+
+  } else {
+    return LuaFuture::create(L, f);
+  }
 }
 
 int Client::callSync(lua_State* L, const std::string& name, int arg_base) {

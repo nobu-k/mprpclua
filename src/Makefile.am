@@ -2,6 +2,8 @@ lib_LTLIBRARIES = libmsgpack-rpc-lua.la
 
 libmsgpack_rpc_lua_la_SOURCES = \
   msgpackrpc.cpp \
+  future.hpp \
+  future.cpp \
   client.hpp \
   client.cpp
 libmsgpack_rpc_lua_la_CXXFLAGS = \

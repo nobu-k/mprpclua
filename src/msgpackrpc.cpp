@@ -17,6 +17,7 @@
  */
 
 #include <lua.hpp>
+#include "future.hpp"
 #include "client.hpp"
 
 namespace msgpack {
@@ -85,6 +86,7 @@ const struct luaL_Reg MpRpcLuaLib[] = {
 
 extern "C" {
   int luaopen_msgpackrpc(lua_State* L) {
+    msgpack::rpc::lua::LuaFuture::registerUserdata(L);
     msgpack::rpc::lua::Client::registerUserdata(L);
     luaL_register(L, msgpack::rpc::lua::MpRpcLuaPkgName,
                   msgpack::rpc::lua::MpRpcLuaLib);
